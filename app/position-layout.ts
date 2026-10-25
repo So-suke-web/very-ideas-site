@@ -1,11 +1,12 @@
-export type MapItem={id:string;title:string;number:number;archived?:boolean;assessment:{impact:number;feasibility:number}};
+export type MapItem={id:string;title:string;number:number;archived?:boolean;assessment:{impact:number;feasibility:number;x?:number;y?:number}};
 export type PlacedItem=MapItem&{x:number;y:number;anchorX:number;anchorY:number;width:number;height:number;lines:string[]};
 export function positionLabels(items:MapItem[]):PlacedItem[]{
  const placed:PlacedItem[]=[];
- for(const item of [...items].sort((a,b)=>Number(b.assessment.impact!==3)-Number(a.assessment.impact!==3)||a.number-b.number)){
+ for(const item of [...items].sort((a,b)=>Number(Number.isFinite(b.assessment.x)&&Number.isFinite(b.assessment.y))-Number(Number.isFinite(a.assessment.x)&&Number.isFinite(a.assessment.y))||Number(b.assessment.impact!==3)-Number(a.assessment.impact!==3)||a.number-b.number)){
   const chars=Array.from(item.title);const lines:string[]=[chars.slice(0,12).join('')];for(let i=12;i<chars.length;i+=14)lines.push(chars.slice(i,i+14).join(''));
   const width=256,height=Math.max(66,lines.length*21+33);
   const anchorX=130+(item.assessment.feasibility-1)*315,anchorY=890-(item.assessment.impact-1)*200;
+  if(Number.isFinite(item.assessment.x)&&Number.isFinite(item.assessment.y)){placed.push({...item,width,height,lines,x:Math.max(130,Math.min(1390,item.assessment.x!)),y:Math.max(90,Math.min(890,item.assessment.y!)),anchorX,anchorY});continue;}
   let best:{x:number;y:number;cost:number}|undefined;
   for(let row=0;row<9;row++)for(let col=0;col<5;col++){
    const x=Math.max(162,Math.min(1358,170+col*295));
@@ -24,3 +25,5 @@ export function positionLabels(items:MapItem[]):PlacedItem[]{
  }
  return placed.sort((a,b)=>a.number-b.number);
 }
+
+export function assessmentAt(x:number,y:number){const px=Math.max(130,Math.min(1390,x)),py=Math.max(90,Math.min(890,y));return {x:px,y:py,impact:Math.round((1+(890-py)/200)*10)/10,feasibility:Math.round((1+(px-130)/315)*10)/10};}
